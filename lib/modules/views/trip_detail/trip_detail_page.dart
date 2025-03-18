@@ -1,100 +1,143 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'trip_detail_controller.dart';
+
+import '../../../data/models/trip_model.dart';
+import 'widgets/trip_agenda.dart';
+import 'widgets/trip_carousel.dart';
+import 'widgets/trip_reviews.dart';
 
 class TripDetailPage extends StatelessWidget {
-  final TripDetailController controller = Get.find();
-
   @override
   Widget build(BuildContext context) {
+    final Trip trip = Get.arguments;
+
     return Scaffold(
-      body: Stack(
-        children: [
-          Image.network(controller.trip.imageUrl!, height: 300, width: double.infinity, fit: BoxFit.cover),
-          Container(
-            height: 300,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+      backgroundColor: Colors.white,
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Colors.grey.shade300)),
+        ),
+        child: ElevatedButton(
+          onPressed: () {
+            Get.snackbar("Booking", "You have booked ${trip.title}!", backgroundColor: Colors.greenAccent, colorText: Colors.black);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueAccent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: EdgeInsets.symmetric(vertical: 15),
+          ),
+          child: Text("Book Now", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+        ),
+      ),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 300,
+            floating: false,
+            pinned: true,
+            backgroundColor: Colors.blueAccent,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Hero(
+                tag: trip.id,
+                child: Image.network(trip.imageUrl!, fit: BoxFit.cover),
               ),
+              title: Text(trip.title ?? "Trip Details", style: TextStyle(fontWeight: FontWeight.bold)),
+              centerTitle: true,
             ),
           ),
-          DraggableScrollableSheet(
-            initialChildSize: 0.65,
-            minChildSize: 0.65,
-            maxChildSize: 0.9,
-            builder: (context, scrollController) {
-              return Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
-                ),
+          SliverList(
+            delegate: SliverChildListDelegate([
+              Padding(
                 padding: EdgeInsets.all(16),
-                child: ListView(
-                  controller: scrollController,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(controller.trip.title ?? "Title", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 5),
+                    Text(trip.title ?? "Unknown", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.location_on, color: Colors.blue, size: 20),
+                        Icon(Icons.location_on, color: Colors.blueAccent),
                         SizedBox(width: 5),
-                        Text(controller.trip.location ?? "Location", style: TextStyle(fontSize: 16, color: Colors.black54)),
+                        Text(trip.location ?? "Unknown", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
                       ],
                     ),
                     SizedBox(height: 10),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(Icons.star, color: Colors.amber, size: 20),
-                        SizedBox(width: 5),
-                        Text(controller.trip.rating.toString(), style: TextStyle(fontSize: 16)),
-                        SizedBox(width: 15),
-                        Icon(Icons.schedule, color: Colors.blue, size: 20),
-                        SizedBox(width: 5),
-                        Text(controller.trip.duration ?? "Duration", style: TextStyle(fontSize: 16, color: Colors.black54)),
+                        Row(
+                          children: [
+                            Icon(Icons.star, color: Colors.amber),
+                            SizedBox(width: 4),
+                            Text(trip.rating?.toString() ?? "0.0", style: TextStyle(fontSize: 18)),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.favorite, color: Colors.redAccent),
+                            SizedBox(width: 4),
+                            Text(trip.favoriteCount?.toString() ?? "0", style: TextStyle(fontSize: 18)),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.thumb_up, color: Colors.green),
+                            SizedBox(width: 4),
+                            Text(trip.likeCount?.toString() ?? "0", style: TextStyle(fontSize: 18)),
+                          ],
+                        ),
                       ],
                     ),
+                    SizedBox(height: 10),
+                    Text(trip.summary ?? "No summary available.", style: TextStyle(fontSize: 16, color: Colors.grey[800])),
                     SizedBox(height: 15),
-                    Text(controller.trip.summary ?? "Summary", style: TextStyle(fontSize: 16, color: Colors.black87)),
-                    SizedBox(height: 10),
-                    Divider(),
-                    Text("Includes", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text(controller.trip.includes ?? "Includes", style: TextStyle(fontSize: 16, color: Colors.black54)),
+
+                    /// **Photo Carousel**
+                    if (trip.photoGallery != null && trip.photoGallery!.isNotEmpty) ...[
+                      TripCarousel(photos: trip.photoGallery!),
+                      SizedBox(height: 15),
+                    ],
+
+                    /// **Price & Total Pax**
+                    Text("Price: \$${trip.price ?? 0.0}", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
                     SizedBox(height: 5),
-                    Text("Excludes", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text(controller.trip.excludes ?? "Excludes", style: TextStyle(fontSize: 16, color: Colors.black54)),
-                    SizedBox(height: 10),
-                    Divider(),
-                    Text("Terms & Conditions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text(controller.trip.terms ?? "Terms", style: TextStyle(fontSize: 14, color: Colors.black54)),
+                    Text("Total Pax: ${trip.totalPax ?? 'N/A'}", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
                     SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orangeAccent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: Text("Book Now", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                    ),
+
+                    /// **Agenda Timeline**
+                    if (trip.agenda != null) ...[
+                      Text("📅 Trip Agenda", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 10),
+                      TripAgenda(agenda: trip.agenda!),
+                      SizedBox(height: 20),
+                    ],
+
+                    /// **Includes & Excludes**
+                    if (trip.includes != null) ...[
+                      Text("✅ Includes", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(trip.includes!, style: TextStyle(fontSize: 16, color: Colors.grey[800])),
+                      SizedBox(height: 10),
+                    ],
+                    if (trip.excludes != null) ...[
+                      Text("❌ Excludes", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(trip.excludes!, style: TextStyle(fontSize: 16, color: Colors.grey[800])),
+                      SizedBox(height: 10),
+                    ],
+
+                    /// **User Reviews**
+                    if (trip.reviews != null) ...[
+                      Text("📝 User Reviews", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 10),
+                      TripReviews(reviews: trip.reviews!),
+                      SizedBox(height: 20),
+                    ],
+
                   ],
                 ),
-              );
-            },
-          ),
-          Positioned(
-            top: 40,
-            left: 16,
-            child: CircleAvatar(
-              backgroundColor: Colors.black.withOpacity(0.5),
-              child: IconButton(
-                icon: Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Get.back(),
               ),
-            ),
+            ]),
           ),
         ],
       ),
